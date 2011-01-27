@@ -12,9 +12,9 @@ __doc__ = """RouteMap
 
 RouteMap gathers and stores routing information.
 
-$Id: RouterMap.py,v 1.1 2010/07/23 00:08:37 egor Exp $"""
+$Id: RouterMap.py,v 1.4 2010/12/21 18:47:25 egor Exp $"""
 
-__version__ = '$Revision: 1.1 $'[11:-2]
+__version__ = '$Revision: 1.4 $'[11:-2]
 
 
 from ZenPacks.community.WMIDataSource.WMIPlugin import WMIPlugin
@@ -54,13 +54,11 @@ class RouteMap(WMIPlugin):
     def process(self, device, results, log):
         """collect WMI information from this device"""
         log.info('processing %s for device %s', self.name(), device.id)
-        routetable = results.get("Win32_IP4RouteTable", None)
-        if not routetable: return
         localOnly = getattr(device, 'zRouteMapCollectOnlyLocal', False)
         indirectOnly = getattr(device, 'zRouteMapCollectOnlyIndirect', False)
         maxRoutes = getattr(device, 'zRouteMapMaxRoutes', 500)
         rm = self.relMap()
-        for route in routetable:
+        for route in results.get("Win32_IP4RouteTable", []):
             om = self.objectMap(route)
             if not hasattr(om, "id"): continue
             if not hasattr(om, "routemask"): continue
@@ -77,13 +75,14 @@ class RouteMap(WMIPlugin):
             if localOnly and om.routeproto != 'local':
                 continue
             if not hasattr(om, 'routetype'): 
-                continue    
+                continue
             om.routetype = self.mapSnmpVal(om.routetype, self.routeTypeMap)
             if indirectOnly and om.routetype != 'indirect':
                 continue
             if len(rm.maps) > maxRoutes:
                 log.error("Maximum number of routes (%d) exceeded", maxRoutes)
                 return 
+            if ':' in om.snmpindex:om.snmpindex=om.snmpindex.split(':',1)[1]
             rm.append(om)
         return rm
 

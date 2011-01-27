@@ -31,7 +31,7 @@
     </tr>      
     <tr>
       <td class="tableheader" align=left>Storage Group</td>
-      <td class="tablevalues" tal:content="python:here.storagepool().caption">1</td>
+      <td class="tablevalues" tal:content="here/getStoragePoolName">1</td>
       <td class="tableheader" align=left>Access</td>
       <td class="tablevalues" tal:content="here/accessType">1</td>
     </tr>      

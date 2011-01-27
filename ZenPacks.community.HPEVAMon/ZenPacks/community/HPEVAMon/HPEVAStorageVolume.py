@@ -12,9 +12,9 @@ __doc__="""HPEVAStorageVolume
 
 HPEVAStorageVolume is an abstraction of a HPEVA_StorageVolume
 
-$Id: HPEVAStorageVolume.py,v 1.2 2010/05/18 13:34:59 egor Exp $"""
+$Id: HPEVAStorageVolume.py,v 1.3 2010/11/28 12:31:34 egor Exp $"""
 
-__version__ = "$Revision: 1.2 $"[11:-2]
+__version__ = "$Revision: 1.3 $"[11:-2]
 
 from Globals import DTMLFile, InitializeClass
 from AccessControl import ClassSecurityInfo
@@ -79,6 +79,9 @@ class HPEVAStorageVolume(OSComponent, HPEVAComponent):
         ("storagepool", ToOne(ToMany,
             "ZenPacks.community.HPEVAMon.HPEVAStoragePool",
             "virtualdisks")),
+        ("drgroup", ToOne(ToMany,
+            "ZenPacks.community.HPEVAMon.HPEVAConsistencySet",
+            "virtualdisks")),
         )
 
     factory_type_information = (
@@ -119,24 +122,42 @@ class HPEVAStorageVolume(OSComponent, HPEVAComponent):
 
     security = ClassSecurityInfo()
 
+
     security.declareProtected(ZEN_CHANGE_DEVICE, 'setStoragePool')
     def setStoragePool(self, spid):
         """
         Set the storagepool relationship to the storage pool specified by the given
         id.
         """
-        strpool = None
-        for storagepool in self.os().storagepools():
-            if storagepool.id != spid: continue
-            strpool = storagepool
-            break
+        strpool = getattr(self.os().storagepools, str(spid), None)
         if strpool: self.storagepool.addRelation(strpool)
         else: log.warn("storage pool id:%s not found", spid)
 
+
     security.declareProtected(ZEN_VIEW, 'getStoragePool')
     def getStoragePool(self):
-        try: return self.storagepool()
-        except: return None
+        return self.storagepool()
+
+
+    security.declareProtected(ZEN_VIEW, 'getStoragePoolName')
+    def getStoragePoolName(self):
+        return getattr(self.getStoragePool(), 'caption', 'Unknown')
+
+
+    security.declareProtected(ZEN_CHANGE_DEVICE, 'setDRGroup')
+    def setDRGroup(self, drgid):
+        """
+        Set the drgroup relationship to the DR Group specified by the given id.
+        """
+        drgroup = getattr(self.os().drgroups, str(drgid), None)
+        if drgroup: self.drgroup.addRelation(drgroup)
+        else: log.warn("DR group id:%s not found", drgid)
+
+
+    security.declareProtected(ZEN_VIEW, 'getDRGroup')
+    def getDRGroup(self):
+        return self.drgroup()
+
 
     def totalBytes(self):
         """
@@ -144,16 +165,19 @@ class HPEVAStorageVolume(OSComponent, HPEVAComponent):
         """
         return self.cacheRRDValue('NumberOfBlocks', 0) * self.blockSize
 
+
     def totalBytesString(self):
         """
         Return the number of total bytes in human readable form ie 10MB
         """
         return convToUnits(self.totalBytes(), divby=1024)
 
+
     def getRRDNames(self):
         """
         Return the datapoint name of this StorageVolume
         """
         return ['StorageVolume_NumberOfBlocks']
+
 
 InitializeClass(HPEVAStorageVolume)

@@ -34,7 +34,6 @@ class ZenPack(ZenPackBase):
                 'community.wmi.InterfaceMap',
                 'community.wmi.FileSystemMap',
                 'community.wmi.ProcessMap',
-                'community.wmi.ProductMap',
                 'community.wmi.RouteMap',
                 'community.wmi.DiskDriveMap',
                 'community.wmi.WinServiceMap',
@@ -43,6 +42,7 @@ class ZenPack(ZenPackBase):
                 'lines',
             ),
             'zWmiMonitorIgnore': (False, 'boolean'),
+            'zIcon': ('/zport/dmd/img/icons/server-windows.png', 'string'),
         },
         '/CIM/WMI/Win2000': {
             'description': ('', 'string'),
@@ -55,7 +55,6 @@ class ZenPack(ZenPackBase):
                 'community.wmi.InterfaceMap',
                 'community.wmi.FileSystemMap',
                 'community.wmi.ProcessMap',
-                'community.wmi.ProductMap',
                 'community.wmi.DiskDriveMap',
                 'community.wmi.WinServiceMap',
                 'zenoss.portscan.IpServiceMap',
@@ -63,6 +62,7 @@ class ZenPack(ZenPackBase):
                 'lines',
             ),
             'zWmiMonitorIgnore': (False, 'boolean'),
+            'zIcon': ('/zport/dmd/img/icons/server-windows.png', 'string'),
         },
     }
 

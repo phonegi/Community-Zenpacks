@@ -12,15 +12,13 @@ __doc__="""DiskDriveMap
 
 DiskDriveMap maps Win32_DiskDrive class to HardDisk class.
 
-$Id: DiskDriveMap.py,v 1.4 2010/07/22 23:54:58 egor Exp $"""
+$Id: DiskDriveMap.py,v 1.7 2010/12/21 18:45:35 egor Exp $"""
 
-__version__ = '$Revision: 1.4 $'[11:-2]
+__version__ = '$Revision: 1.7 $'[11:-2]
 
 
 from ZenPacks.community.WMIDataSource.WMIPlugin import WMIPlugin
-from Products.DataCollector.plugins.DataMaps import ObjectMap
 from Products.DataCollector.plugins.DataMaps import MultiArgs
-from Products.DataCollector.EnterpriseOIDs import EnterpriseOIDs
 
 class DiskDriveMap(WMIPlugin):
     """Map Win32_DiskDrive class to HardDisk"""
@@ -65,23 +63,25 @@ class DiskDriveMap(WMIPlugin):
         log.info('processing %s for device %s', self.name(), device.id)
         rm = self.relMap()
         perfnames = {}
-        instances = results.get("Win32_PerfRawData_PerfDisk_PhysicalDisk", None)
-        if instances:
-            for instance in instances:
-                perfnames[instance['name'].split()[0]] = instance['snmpindex']
-        instances = results.get("Win32_DiskDrive", None)
-        if not instances: return
-        for instance in instances:
+        for inst in results.get("Win32_PerfRawData_PerfDisk_PhysicalDisk", []):
+            name = inst.get('name', None) or ''
+            snmpindex = inst.get('snmpindex', None) or ''
+            if (not name or not snmpindex): continue
+            if ' ' in name: name = name.split()[0]
+            if ':' not in snmpindex: perfnames[name] = snmpindex
+            else: perfnames[name] = snmpindex.split(':', 1)[1]
+        for instance in results.get("Win32_DiskDrive", []):
             om = self.objectMap(instance)
-            om.id = self.prepId('PHYSICALDRIVE%s'%om.id)
             try:
+                om.id = self.prepId('PHYSICALDRIVE%s'%om.id)
                 if not om._mediatype or not om._mediatype.startswith('Fixed'):
                     continue
                 om.perfindex = perfnames.get(str(instance['id']), None)
                 if not om.perfindex: continue
                 if om._model and not om._manuf: om._manuf = om._model.split()[0]
-                if om._manuf not in EnterpriseOIDs.values(): om._manuf='Unknown'
+                if not om._manuf: om._manuf = 'Unknown'
                 if om._model: om.setProductKey = MultiArgs(om._model, om._manuf)
+                if ':' in om.snmpindex:om.snmpindex=om.snmpindex.split(':',1)[1]
             except AttributeError:
                 raise
             rm.append(om)
